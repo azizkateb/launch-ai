@@ -23,6 +23,7 @@ export function Generator() {
 
   // API state
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [progress, setProgress] = useState(0);
   const [generatedContent, setGeneratedContent] = useState<LandingPageData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +31,43 @@ export function Generator() {
   const [heroFile, setHeroFile] = useState<File | null>(null);
   const [heroPreview, setHeroPreview] = useState<string | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const validateImageFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      throw new Error("Please select a valid image file.");
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("Image must be smaller than 5MB.");
+    }
+  };
+
+  const uploadHeroFile = async (file: File) => {
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await apiFetch("/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.success || !response.imageUrl) {
+        throw new Error(response.error || "Image upload failed.");
+      }
+
+      return response.imageUrl;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleGenerate = async (e: FormEvent) => {
     e.preventDefault();
@@ -57,16 +95,12 @@ export function Generator() {
     }, 300);
 
     try {
-      // convert file to base64 if provided
-      const fileToBase64 = (file: File) =>
-        new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+      let heroImageUrl: string | undefined;
 
-      const heroImageBase64 = heroFile ? await fileToBase64(heroFile) : undefined;
+      if (heroFile) {
+        heroImageUrl = await uploadHeroFile(heroFile);
+        setHeroPreview(heroImageUrl);
+      }
 
       const data = await apiFetch("/api/generate", {
         method: "POST",
@@ -79,7 +113,7 @@ export function Generator() {
           style,
           color,
           background: background === "custom" ? customBackground : background,
-          heroImageBase64,
+          heroImageUrl,
         }),
       });
 
@@ -189,13 +223,22 @@ export function Generator() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const f = e.target.files && e.target.files[0];
                       if (!f) return;
-                      setHeroFile(f);
-                      setHeroPreview(URL.createObjectURL(f));
+                      try {
+                        validateImageFile(f);
+                        setHeroFile(f);
+                        setError(null);
+                        const localPreview = await readFileAsDataUrl(f);
+                        setHeroPreview(localPreview);
+                      } catch (err) {
+                        setHeroFile(null);
+                        setHeroPreview(null);
+                        setError(err instanceof Error ? err.message : "Invalid image file.");
+                      }
                     }}
-                    disabled={isGenerating}
+                    disabled={isGenerating || isUploadingImage}
                   />
                 </div>
                 {heroPreview ? (
@@ -279,6 +322,7 @@ export function Generator() {
                 <div className="pt-4">
                   <HeroEditor
                     hero={generatedContent.hero}
+                    uploadImage={uploadHeroFile}
                     setHero={(h) => {
                       setGeneratedContent((prev) => {
                         if (!prev) return prev;
@@ -292,13 +336,13 @@ export function Generator() {
 
               <Button 
                 type="submit"
-                disabled={isGenerating}
+                disabled={isGenerating || isUploadingImage}
                 className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium rounded-xl"
               >
-                {isGenerating ? (
+                {(isGenerating || isUploadingImage) ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Generating... {Math.round(progress)}%
+                    {isUploadingImage ? "Uploading image..." : `Generating... ${Math.round(progress)}%`}
                   </>
                 ) : (
                   <>

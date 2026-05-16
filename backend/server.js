@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 
 import generateRoute from "./routes/generate.js";
 import exportRoute from "./routes/export.js";
+import uploadRoute from "./routes/upload.js";
 import path from "path";
 
 dotenv.config();
@@ -11,7 +12,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors());
-// Increase JSON/body size limit to allow image uploads as base64 in requests
+// Increase request body limit for larger payloads and future multipart use cases
 const bodyLimit = process.env.BODY_LIMIT || "25mb";
 app.use(express.json({ limit: bodyLimit }));
 app.use(express.urlencoded({ limit: bodyLimit, extended: true }));
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ limit: bodyLimit, extended: true }));
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 app.use('/exports', express.static(path.join(process.cwd(), 'public', 'exports')));
 
+app.use("/upload-image", uploadRoute);
 app.use("/api/generate", generateRoute);
 app.use("/api/export", exportRoute);
 

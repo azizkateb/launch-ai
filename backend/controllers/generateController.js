@@ -1,11 +1,9 @@
 import { generateAIContent } from "../services/aiService.js";
 import { cleanJson } from "../utils/cleanJson.js";
-import fs from "fs";
-import path from "path";
 
 export const generateLandingPage = async (req, res) => {
   try {
-    const { businessType, audience, style, color, background } = req.body;
+    const { businessType, audience, style, color, background, heroImageUrl } = req.body;
     const prompt = `
 You are an expert Senior UI/UX Designer and SaaS Product Architect.
 
@@ -67,6 +65,7 @@ Audience: ${audience}
 Style Preference: ${style}
 Primary Color: ${color}
 Background: ${background}
+Hero Image URL: ${heroImageUrl || "none"}
 
 ---
 
@@ -177,9 +176,11 @@ Background: ${background}
 2. Avoid repeating sentence patterns
 3. Vary tone: professional, bold, luxury, startup, creative
 4. Make hero section highly unique every time
-5. Image prompts must be short and visually clear
-6. Never generate generic placeholder content
-7. Design system must change significantly each generation
+5. If a Hero Image URL is provided, ALWAYS use it in hero.image.url
+6. NEVER generate an AI image prompt or external image URL when heroImageUrl exists
+7. hero.image must always be an upload object with type, url, and alt
+8. Never generate generic placeholder content
+9. Design system must change significantly each generation
 ---
 
 🔥 CONTENT MAXIMIZATION SYSTEM (VERY IMPORTANT):
@@ -321,31 +322,24 @@ Think of this as:
 
     const parsed = JSON.parse(cleaned);
 
-    // If the client provided an uploaded hero image (base64), save it and attach URL
-    try {
-      const heroImageBase64 = req.body?.heroImageBase64;
-      if (heroImageBase64) {
-        const matches = heroImageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
-        let ext = "png";
-        let data = heroImageBase64;
-        if (matches) {
-          const mime = matches[1];
-          data = matches[2];
-          ext = mime.split("/")[1];
-        }
-
-        const uploadDir = path.join(process.cwd(), "public", "uploads");
-        fs.mkdirSync(uploadDir, { recursive: true });
-        const filename = `hero_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
-        const filePath = path.join(uploadDir, filename);
-        fs.writeFileSync(filePath, Buffer.from(data, "base64"));
-
-        const host = process.env.SERVER_URL || "https://launch-ai.onrender.com";
-        parsed.hero = parsed.hero || {};
-        parsed.hero.image = { type: "upload", url: `${host}/uploads/${filename}`, alt: parsed.hero?.image?.alt || "" };
-      }
-    } catch (err) {
-      console.warn("Failed to save hero image:", err);
+    // If the client provided a hero image URL, enforce the upload object and keep the image permanent.
+    if (heroImageUrl) {
+      parsed.hero = parsed.hero || {};
+      parsed.hero.image = {
+        type: "upload",
+        url: heroImageUrl,
+        alt: "user uploaded image",
+      };
+    } else {
+      parsed.hero = parsed.hero || {};
+      parsed.hero.image = parsed.hero.image || {
+        type: "upload",
+        url: "",
+        alt: "Hero image",
+      };
+      parsed.hero.image.type = "upload";
+      parsed.hero.image.url = parsed.hero.image.url || "";
+      parsed.hero.image.alt = parsed.hero.image.alt || "Hero image";
     }
 
     parsed.theme = parsed.theme || {};
