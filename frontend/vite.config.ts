@@ -14,7 +14,7 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH ?? "/";
 
 export default defineConfig({
-  base: basePath,
+    base: "/launch-ai/",
   plugins: [
     react(),
     tailwindcss(),
@@ -42,7 +42,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: 'dist',
     emptyOutDir: true,
   },
   server: {
