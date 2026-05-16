@@ -354,12 +354,16 @@ Think of this as:
       data: parsed,
     });
 
-  } catch (error) {
-    console.log("Generation Error:", error);
-
-    return res.status(500).json({
-      success: false,
-      error: "Generation failed",
-    });
   }
+  catch (error) {
+  console.error("🔥 FULL BACKEND ERROR:");
+  console.error(error);
+  console.error(error?.stack);
+
+  return res.status(500).json({
+    success: false,
+    error: error.message,
+    stack: error.stack
+  });
+}
 };
