@@ -3,7 +3,7 @@ import { zipFolder, cleanupFolder } from "../services/export/zip.js";
 import path from "path";
 import fs from "fs";
 
-const SERVER_URL = process.env.SERVER_URL || "http://localhost:5000";
+const SERVER_URL = process.env.SERVER_URL || "https://launch-ai.onrender.com";
 
 export const downloadProject = async (req, res) => {
   let folderPath = null;

@@ -10,6 +10,7 @@ import { Sparkles, Loader2, AlertCircle, CheckCircle, Maximize2 } from "lucide-r
 import { LandingPage, type LandingPageData } from "@/components/LandingPage";
 import { HeroEditor } from "@/components/HeroEditor";
 import ExportDialog from "@/components/ExportDialog";
+import { apiFetch } from "@/config/api";
 
 export function Generator() {
   // Form state
@@ -67,7 +68,7 @@ export function Generator() {
 
       const heroImageBase64 = heroFile ? await fileToBase64(heroFile) : undefined;
 
-      const response = await fetch("http://localhost:5000/api/generate", {
+      const data = await apiFetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,12 +82,6 @@ export function Generator() {
           heroImageBase64,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
 
       if (!data.success) {
         throw new Error(data.message || "Failed to generate landing page");

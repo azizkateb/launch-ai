@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DownloadIcon, CheckCircle, AlertCircle, LoaderIcon } from 'lucide-react';
+import { apiFetch } from '@/config/api';
 
 export default function ExportDialog({ generatedContent, isOpen, onClose }) {
   const [selectedFramework, setSelectedFramework] = useState('react');
@@ -14,42 +15,41 @@ export default function ExportDialog({ generatedContent, isOpen, onClose }) {
   ];
 
   const handleExport = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      setDownloadUrl(null);
+      if (isLoading) return;
 
-      const response = await fetch('http://localhost:5000/api/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          data: generatedContent,
-          framework: selectedFramework,
-        }),
-      });
+      try {
+        setIsLoading(true);
+        setError(null);
+        setDownloadUrl(null);
 
-      const result = await response.json();
+        const result = await apiFetch('/api/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: generatedContent,
+            framework: selectedFramework,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Export failed');
-      }
+        if (result.success && result.downloadUrl) {
+          setDownloadUrl(result.downloadUrl);
 
-      if (result.success && result.downloadUrl) {
-        setDownloadUrl(result.downloadUrl);
-        // Auto-download
-        const link = document.createElement('a');
-        link.href = result.downloadUrl;
-        link.download = result.fileName || `project-${selectedFramework}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        throw new Error('Invalid response from server');
-      }
-    } catch (err) {
-      console.error('Export error:', err);
-      setError(err.message || 'Failed to export project');
-    } finally {
+          const link = document.createElement('a');
+          link.href = result.downloadUrl;
+          link.download = result.fileName || `project-${selectedFramework}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          throw new Error(result.error || 'Invalid response from server');
+        }
+      } catch (err) {
+        console.error('Export error:', err);
+        let message = err instanceof Error ? err.message : 'Failed to export project. Please try again.';
+        if (message.includes('NetworkError') || message.includes('Unable to reach')) {
+          message = 'Unable to reach export service. Please check your connection and try again.';
+        }
+        setError(message);
       setIsLoading(false);
     }
   };

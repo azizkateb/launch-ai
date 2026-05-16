@@ -340,7 +340,7 @@ Think of this as:
         const filePath = path.join(uploadDir, filename);
         fs.writeFileSync(filePath, Buffer.from(data, "base64"));
 
-        const host = process.env.SERVER_URL || `http://localhost:5000`;
+        const host = process.env.SERVER_URL || "https://launch-ai.onrender.com";
         parsed.hero = parsed.hero || {};
         parsed.hero.image = { type: "upload", url: `${host}/uploads/${filename}`, alt: parsed.hero?.image?.alt || "" };
       }
