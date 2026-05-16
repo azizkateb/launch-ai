@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" preserveAspectRatio="none">
+  <rect width="800" height="450" fill="#334155" />
+  <rect x="60" y="60" width="680" height="330" rx="36" fill="#0f172a" />
+  <path d="M160 280h480" stroke="#94a3b8" stroke-width="20" stroke-linecap="round" />
+  <path d="M160 220h480" stroke="#94a3b8" stroke-width="20" stroke-linecap="round" />
+  <path d="M160 160h280" stroke="#94a3b8" stroke-width="20" stroke-linecap="round" />
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="42">Image unavailable</text>
+</svg>

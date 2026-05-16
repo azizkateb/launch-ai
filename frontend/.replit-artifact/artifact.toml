@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "LaunchAI"
+version = "1.0.0"
+id = "artifacts/launchai"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21166
+
+[services.development]
+run = "pnpm --filter @workspace/launchai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/launchai", "run", "build" ]
+publicDir = "artifacts/launchai/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21166"
+BASE_PATH = "/"
